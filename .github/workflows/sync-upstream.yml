@@ -1,0 +1,45 @@
+name: Sync upstream QUL
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream-qul
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge canonical upstream into this fork
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/merge-upstream" -f branch=main
+
+      - name: Close resolved sync alerts
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'QUL upstream sync failed in:title' --json number --jq '.[].number' |
+            while read -r issue; do
+              gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --comment 'The scheduled upstream sync is healthy again.'
+            done
+
+      - name: Report a sync failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'QUL upstream sync failed in:title' --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "Scheduled sync failed again: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title 'QUL upstream sync failed' --body "The scheduled upstream sync needs attention: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi

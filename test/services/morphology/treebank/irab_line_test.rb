@@ -29,6 +29,20 @@ class IrabLineTest < Minitest::Test
     'morphology.edge_relations.subj' => 'فاعل',
     'morphology.edge_relations.obj'  => 'مفعول به',
     'morphology.edge_relations.root' => 'رأس الجملة',
+    'morphology.irab.prefix.bi+'         => 'باء الجر',
+    'morphology.irab.lemma_intro'        => '، اللما له «',
+    'morphology.irab.root_intro'         => '، الجذر له «',
+    'morphology.irab.verb_form_intro'    => '، النمط له «',
+    'morphology.irab.dep_intro'          => '. وهو ',
+    'morphology.irab.dep_to'             => ' لل‍',
+    'morphology.irab.def_infix'          => ' ال‍',
+    'morphology.irab.elided_m'           => ' المحذوف.',
+    'morphology.irab.elided_f'           => ' المحذوفة.',
+    'morphology.irab.case.jussive_sukun'     => 'مجزوم بالسكون لانه معتل الاخر.',
+    'morphology.irab.case.subjunctive_fatha' => 'منصوب وعلامة نصبه الفتحة الظاهرة على اخره.',
+    'morphology.irab.case.nominative_damma'  => 'مرفوع وعلامة رفعه الضمة الظاهرة على اخره.',
+    'morphology.irab.case.accusative_fatha'  => 'منصوب وعلامة نصبه الفتحة الظاهرة على اخره.',
+    'morphology.irab.case.genitive_kasra'    => 'مجرور وعلامة جره الكسره الظاهرة على اخره.',
   }.freeze
 
   def make_translator(dict = AR)
@@ -118,7 +132,7 @@ class IrabLineTest < Minitest::Test
     pos_frag = frags.first
     assert_equal 'اسم', pos_frag[:text]
     assert_equal 'sky', pos_frag[:color_class]
-    assert_equal true, pos_frag[:arabic_font]
+    assert_equal false, pos_frag[:quran_font]
   end
 
   def test_lemma_fragment_present_when_lemma_name_given
@@ -175,8 +189,10 @@ class IrabLineTest < Minitest::Test
     frags = line.fragments
     dep_lead = frags.find { |f| f[:text] == '. وهو ' }
     assert dep_lead, "expected dependency clause lead '. وهو '"
-    head_ref = frags.find { |f| f[:text] == 'بِ' && f[:color_class] == 'green' }
-    assert head_ref, "expected green head text reference"
+    head_ref = frags.find { |f| f[:wrapper_class] == 'qpc-hafs' }
+    assert head_ref, "expected qpc-hafs head reference group"
+    green_child = head_ref[:children].find { |c| c[:text] == 'بِ' && c[:color_class] == 'green' }
+    assert green_child, "expected green head text child"
   end
 
   def test_dependency_clause_implicit_pronoun_head_masculine
@@ -184,7 +200,7 @@ class IrabLineTest < Minitest::Test
     head = make_head_token(pos_key: 'V', text_qpc_hafs: '(نَحْنُ)', token_type: 'implicit_pronoun')
     line = build_line(token, head)
     frags = line.fragments
-    hidden = frags.find { |f| f[:text] == 'المحذوف' }
+    hidden = frags.find { |f| f[:text] == ' المحذوف.' }
     assert hidden, "expected المحذوف for implicit-pronoun head, got #{frags.map { |f| f[:text] }.inspect}"
   end
 
@@ -194,7 +210,7 @@ class IrabLineTest < Minitest::Test
     head = make_head_token(pos_key: 'PRON', text_qpc_hafs: '(هِيَ)', token_type: 'elided')
     line = build_line(token, head, translator: make_translator(dict))
     frags = line.fragments
-    hidden = frags.find { |f| f[:text] == 'المحذوفة' }
+    hidden = frags.find { |f| f[:text] == ' المحذوفة.' }
     assert hidden, "expected المحذوفة when head POS Arabic label ends with ة, got #{frags.map { |f| f[:text] }.inspect}"
   end
 

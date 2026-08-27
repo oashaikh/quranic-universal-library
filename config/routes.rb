@@ -60,7 +60,6 @@ Rails.application.routes.draw do
 
   get 'tools', to: 'community#tools', as: :tools
   get :quran_scripts_comparison, to: 'quran_scripts_comparison#compare_words', as: :compare_words_quran_scripts_comparison
-  get 'ayah-boundaries', to: 'community#ayah_boundaries', as: :ayah_boundaries
   get 'compare-audio', to: 'community#compare_audio', as: :compare_audio
   get 'docs', to: 'community#docs_index', as: :docs_index
   get 'docs/:key', to: 'community#docs', as: :docs
@@ -242,9 +241,11 @@ Rails.application.routes.draw do
       post 'rerun_step', to: 'runs#rerun_step', as: :rerun_step
       post 'cancel', to: 'runs#cancel', as: :cancel
       post 'import', to: 'runs#import_segments', as: :import
+      post 'ayah_boundary', to: 'runs#update_ayah_boundary', as: :ayah_boundary
       delete 'intermediates', to: 'runs#destroy_intermediates', as: :intermediates
       get 'artifact', to: 'runs#artifact', as: :artifact
       get 'audio', to: 'runs#audio', as: :audio
+      get 'surah_timeline', to: 'runs#surah_timeline', as: :surah_timeline
     end
   end
 
